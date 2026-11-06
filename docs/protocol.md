@@ -234,6 +234,20 @@ The following message types are used for communication between the server and cl
 | `USER_JOINED` | Server → Clients | Notify room participants |
 | `USER_LEFT` | Server → Clients | Notify room participants |
 | `RECONNECT` | Client → Server | Request session recovery |
+| `PING`	| Client → Server	|Checks whether the connection is responsive |
+|`PONG`	|Server → Client	|Responds to a PING|
+
+### Heartbeat
+
+The client may send a `PING` message to check whether the server
+is responsive.
+
+The server responds with a `PONG` message.
+
+The `PONG` message confirms that the server received and processed
+the heartbeat request.
+
+Heartbeat messages do not modify the whiteboard state.
 
 ### 7.2 Room Management
 
@@ -949,3 +963,20 @@ As development progresses, the protocol documentation will be updated to reflect
 
 **Protocol Version:** 1.0  
 **Status:** Proposed specification, pending team approval and implementation validation.
+
+## Stage 1 Implementation
+
+The first networking implementation supports:
+
+- TCP client-server communication.
+- Four-byte big-endian message length framing.
+- UTF-8 JSON serialization.
+- CONNECT and CONNECT_SUCCESS.
+- CONNECT_ERROR or ERROR responses for rejected requests.
+- DISCONNECT.
+- PING and PONG.
+- CHAT_MESSAGE and CHAT_BROADCAST.
+- USER_JOINED and USER_LEFT events.
+
+Room-specific communication, drawing operations, permissions,
+persistence and GUI integration are implemented in later stages.
