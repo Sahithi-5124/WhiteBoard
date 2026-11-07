@@ -165,34 +165,51 @@ class WhiteboardServer:
                 )
                 return
 
-            # The server assigns the identity.
-            user_id = uuid.uuid4().hex[:12]
-
-            client = ClientConnection(
-                sock=client_socket,
-                user_id=user_id,
-                username=username
-            )
-
-            # Send connection confirmation before registering broadcasts.
-            response = create_message(
-                CONNECT_SUCCESS,
-                payload={
-                    "user_id": user_id,
-                    "username": username,
-                    "message": "Connected successfully."
-                },
-                sender_id="SERVER"
-            )
-
-            send_message(
-                client_socket,
-                response,
-                client.send_lock
-            )
-
+            
+            # Check whether the username is already in use.
+            # Keep the check and registration inside the same lock
+            # to prevent simultaneous duplicate connections.
             with self.clients_lock:
+
+                username_taken = any(
+                    existing_client.username.casefold() == username.casefold()
+                    for existing_client in self.clients.values()
+                )
+
+                if username_taken:
+                    self.send_connect_error(
+                        client_socket,
+                        "Username already taken."
+                    )
+                    return
+
+                # The server assigns the identity.
+                user_id = uuid.uuid4().hex[:12]
+
+                client = ClientConnection(
+                    sock=client_socket,
+                    user_id=user_id,
+                    username=username
+                )
+
+                # Register the client before confirming the connection.
                 self.clients[user_id] = client
+
+                response = create_message(
+                    CONNECT_SUCCESS,
+                    payload={
+                        "user_id": user_id,
+                        "username": username,
+                        "message": "Connected successfully."
+                    },
+                    sender_id="SERVER"
+                )
+
+                send_message(
+                    client_socket,
+                    response,
+                    client.send_lock
+                )
 
             print(f"{username} connected with ID {user_id}")
 
