@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QMessageBox
+import ipaddress
+
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -6,7 +7,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QVBoxLayout,
-    QFormLayout
+    QFormLayout,
+    QMessageBox
 )
 
 
@@ -61,20 +63,45 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(self.status_label)
 
     def handle_connect(self):
+
+        # Reset connection status
         self.status_label.setText("Disconnected")
 
+        # Read input values
         host = self.host_input.text().strip()
         port = self.port_input.text().strip()
         username = self.username_input.text().strip()
 
-        if not host:
-            QMessageBox.warning(self, "Input Error", "Enter server IP address.")
+        # Validate server IP address
+        try:
+            ipaddress.IPv4Address(host)
+
+        except ipaddress.AddressValueError:
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Enter a valid IPv4 address."
+            )
             return
 
+        # Validate username
         if not username:
-            QMessageBox.warning(self, "Input Error", "Enter your username.")
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Enter your username."
+            )
             return
 
+        if len(username) > 30:
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Username must not exceed 30 characters."
+            )
+            return
+
+        # Validate port number
         try:
             port = int(port)
 
@@ -82,7 +109,12 @@ class MainWindow(QMainWindow):
                 raise ValueError
 
         except ValueError:
-            QMessageBox.warning(self, "Input Error", "Enter a valid port number.")
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Enter a valid port number."
+            )
             return
 
+        # All inputs are valid
         self.status_label.setText("Inputs validated. Ready to connect.")
